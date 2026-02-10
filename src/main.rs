@@ -9,6 +9,7 @@ use CREPLrs::{
     cli::{Cli, OpMode},
     lex::Token,
     registry::{add_lib, del_lib, get_libs, get_sym},
+    vars::{const_eval, display_all, display_vars, var_eval},
 };
 
 use libc::{FILE, c_char};
@@ -74,6 +75,25 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         if tokens[0].1 == ":ls" {
             get_libs();
+            continue;
+        }
+        if tokens[0].1 == ":const" {
+            println!("{:?}", const_eval(tokens.into_iter().skip(1).collect()));
+            continue;
+        }
+
+        if tokens[0].1 == ":var" {
+            println!("{:?}", var_eval(tokens.into_iter().skip(1).collect()));
+            continue;
+        }
+
+        if tokens[0].1 == ":p" {
+            display_vars(tokens.into_iter().skip(1).collect());
+            continue;
+        }
+
+        if tokens[0].1 == ":pa" {
+            display_all();
             continue;
         }
         if tokens[0].0 != Token::Id {

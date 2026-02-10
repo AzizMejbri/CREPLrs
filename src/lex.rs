@@ -1,6 +1,6 @@
 use logos::Logos;
 
-#[derive(Logos, Debug, PartialEq)]
+#[derive(Logos, Debug, Clone, PartialEq)]
 pub enum Token {
     #[regex("[a-zA-Z_][a-zA-Z0-9_]*")]
     Id,
@@ -20,13 +20,41 @@ pub enum Token {
     #[regex(r"'.'")]
     CChar,
 
-    #[token(";")]
-    Semicolon,
+    #[token("(")]
+    LParen,
+
+    #[token(")")]
+    RParen,
+
+    #[token("-")]
+    Minus,
+    #[token("+")]
+    Plus,
+    #[token("*")]
+    Star,
+    #[token("/")]
+    Slash,
+
+    #[token("==")]
+    EqEq,
+    #[token("!=")]
+    BangEq,
+    #[token("<=")]
+    Le,
+    #[token("<")]
+    Lt,
+    #[token(">=")]
+    Ge,
+    #[token(">")]
+    Gt,
+
+    #[token("!")]
+    Bang,
 
     #[regex(r"[ \t\n\f]+", logos::skip)]
     WS,
 
-    #[regex(r":[rcdfvsl]|:ul|:ls")]
+    #[regex(r":[rcdfvslp]|:ul|:ls|:const|:var|:t|:pa")]
     Command,
 }
 
