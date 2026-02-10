@@ -7,7 +7,9 @@ links = "ffi"
 [dependencies]
 libc = "0.2.180"
 logos = "0.16.1"
+once_cell = "1.21.3"
 pkg-config = "0.3.32"
+rustyline = "17.0.2"
 # libffi-sys = "4.1.0"
 
 [build-dependencies]

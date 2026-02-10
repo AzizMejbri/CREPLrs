@@ -5,6 +5,9 @@ pub enum Token {
     #[regex("[a-zA-Z_][a-zA-Z0-9_]*")]
     Id,
 
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+")]
+    FileName,
+
     #[regex(r#""([^"\\]|\\.)*""#)]
     CString,
 
@@ -22,6 +25,9 @@ pub enum Token {
 
     #[regex(r"[ \t\n\f]+", logos::skip)]
     WS,
+
+    #[regex(r":[rcdfvsl]|:ul|:ls")]
+    Command,
 }
 
 #[allow(unused)]

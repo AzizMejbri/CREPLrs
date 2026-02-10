@@ -43,10 +43,12 @@ impl DlError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct DynLib {
     handle: *mut c_void,
 }
+
+unsafe impl Send for DynLib {}
 
 impl DynLib {
     pub fn open(filename: &str, flags: &[DlOpenFlags]) -> Result<Self, DlError> {

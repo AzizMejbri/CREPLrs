@@ -118,6 +118,17 @@ impl FfiType {
         }
     }
 }
+impl From<i8> for FfiType {
+    fn from(_: i8) -> Self {
+        FfiType::SInt8
+    }
+}
+
+impl From<u8> for FfiType {
+    fn from(_: u8) -> Self {
+        FfiType::UInt8
+    }
+}
 
 impl From<i32> for FfiType {
     fn from(_: i32) -> Self {
