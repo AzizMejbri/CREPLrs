@@ -5,6 +5,7 @@ pub enum Expr {
     Number(f64),
     Integer(i64),
     CString(String),
+    CChar(char),
     Variable(String),
     Unary(UnaryOp, Box<Expr>),
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
@@ -79,7 +80,8 @@ impl Parser {
                 Ok(Expr::Number(value))
             }
             Token::Id => Ok(Expr::Variable(text.to_string())),
-            Token::CString => Ok(Expr::Variable(text.to_string())),
+            Token::CString => Ok(Expr::CString(text.to_string())),
+            Token::CChar => Ok(Expr::CChar(text.chars().nth(1).unwrap())),
             Token::LParen => {
                 let expr = self.parse_expr(0)?;
                 match self.peek() {

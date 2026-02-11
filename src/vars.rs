@@ -99,3 +99,17 @@ pub fn display_all() {
         println!("\t- {} -> {:?}", name, value)
     }
 }
+
+#[inline(always)]
+pub fn get_value(var: &str) -> Option<Value> {
+    GLOBAL_ENV.lock().unwrap().get(var)
+}
+
+#[inline(always)]
+pub fn set_value(var: &str, val: Value) {
+    GLOBAL_ENV
+        .lock()
+        .unwrap()
+        .set_var(var.to_string(), val)
+        .unwrap_or_else(|e| eprintln!("{e}"))
+}

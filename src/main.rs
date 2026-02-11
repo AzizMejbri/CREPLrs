@@ -7,9 +7,10 @@ use std::{
 use CREPLrs::{
     cffi::{self},
     cli::{Cli, OpMode},
+    eval::Value,
     lex::Token,
     registry::{add_lib, del_lib, get_libs, get_sym},
-    vars::{const_eval, display_all, display_vars, var_eval},
+    vars::{const_eval, display_all, display_vars, get_value, set_value, var_eval},
 };
 
 use libc::{FILE, c_char};
@@ -24,7 +25,7 @@ const RESET: &str = "\x1b[m";
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut mode = OpMode::Void;
-    let mut last = String::new();
+    let mut last = "0".to_string();
     let mut cli = Cli::new(&mode);
     unsafe {
         setvbuf(stdout, std::ptr::null_mut(), libc::_IONBF, 0);
@@ -34,8 +35,32 @@ fn main() -> Result<(), Box<dyn Error>> {
             continue;
         }
         if tokens[0].1 == ":r" {
-            println!("{last}");
-            continue;
+            match tokens.len() {
+                1 => {
+                    println!("{last}");
+                    continue;
+                }
+                2 => {
+                    let tmp = match mode {
+                        OpMode::Int => Value::Integer(last.parse::<i64>().unwrap()),
+                        OpMode::Float => Value::Number(last.parse::<f64>().unwrap()),
+                        OpMode::Ptr => Value::CString(last.clone()),
+                        OpMode::Char => Value::CChar(last.chars().nth(0).unwrap()),
+                        _ => {
+                            eprintln!(
+                                "{RED} switch operation mode before assigning the last result to a variable, attempt of assigning () to a variable detected ...{RESET}"
+                            );
+                            continue;
+                        }
+                    };
+                    set_value(&tokens[1].1, tmp);
+                    continue;
+                }
+                _ => {
+                    eprintln!("{RED}ERROR: Syntax Error: expected Syntax is `:r <var>` or `:r`");
+                    continue;
+                }
+            }
         }
         if tokens[0].1 == ":d" {
             mode = OpMode::Int;
@@ -120,6 +145,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Token::CInt => FfiType::SInt64,
                 Token::CFloat => FfiType::Double,
                 Token::CChar => FfiType::SInt8,
+                Token::Id => match get_value(&token.1) {
+                    None => {
+                        eprintln!(
+                            "{RED}ERROR: variable or constant `{}` does not exist{RESET}",
+                            token.1
+                        );
+                        continue;
+                    }
+                    Some(Value::CString(_)) => FfiType::Pointer,
+                    Some(Value::CChar(_)) => FfiType::SInt8,
+                    Some(Value::Integer(_)) => FfiType::SInt64,
+                    Some(Value::Number(_)) => FfiType::Double,
+                    Some(Value::Bool(_)) => FfiType::SInt8,
+                },
                 _ => FfiType::Void,
             });
             match token.0 {
@@ -148,7 +187,54 @@ fn main() -> Result<(), Box<dyn Error>> {
                     cif_args.push(&*val as *const _ as *mut c_void);
                     arg_boxes.push(val);
                 }
-                _ => {}
+                Token::Id => match get_value(&token.1) {
+                    None => {
+                        eprintln!(
+                            "{RED}ERROR: variable or constant `{}` does not exist{RESET}",
+                            token.1
+                        );
+                        continue;
+                    }
+                    Some(Value::CString(s)) => {
+                        println!("LOG: Got this value {s} from the variable {}", token.1);
+                        let cstr = Box::new(std::ffi::CString::new(s.clone()).unwrap());
+                        let char_ptr = cstr.as_ptr();
+                        arg_boxes.push(cstr);
+
+                        let ptr_box = Box::new(char_ptr);
+                        cif_args.push(&*ptr_box as *const _ as *mut c_void);
+                        arg_boxes.push(ptr_box);
+                    }
+                    Some(Value::CChar(c)) => {
+                        println!("LOG: Got this value {c} from the variable {}", token.1);
+                        let val = Box::new(c);
+                        cif_args.push(&*val as *const _ as *mut c_void);
+                        arg_boxes.push(val);
+                    }
+                    Some(Value::Integer(int)) => {
+                        println!("LOG: Got this value {int} from the variable {}", token.1);
+                        let val = Box::new(int);
+                        cif_args.push(&*val as *const _ as *mut c_void);
+                        arg_boxes.push(val);
+                    }
+                    Some(Value::Number(float)) => {
+                        println!("LOG: Got this value {float} from the variable {}", token.1);
+                        let val = Box::new(float);
+                        cif_args.push(&*val as *const _ as *mut c_void);
+                        arg_boxes.push(val);
+                    }
+                    Some(Value::Bool(bool)) => {
+                        let val = Box::new(bool as i8);
+                        cif_args.push(&*val as *const _ as *mut c_void);
+                        arg_boxes.push(val);
+                    }
+                    _ => {
+                        unreachable!()
+                    }
+                },
+                _ => {
+                    unreachable!()
+                }
             }
         }
         match mode {

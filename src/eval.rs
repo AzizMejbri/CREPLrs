@@ -5,6 +5,7 @@ use crate::parser::{BinaryOp, Expr, UnaryOp};
 #[derive(Debug, Clone)]
 pub enum Value {
     CString(String),
+    CChar(char),
     Number(f64),
     Integer(i64),
     Bool(bool),
@@ -55,6 +56,7 @@ pub fn eval(expr: &Expr, env: &Env) -> Result<Value, String> {
     match expr {
         Expr::Integer(i) => Ok(Value::Integer(*i)),
         Expr::Number(n) => Ok(Value::Number(*n)),
+        Expr::CChar(c) => Ok(Value::CChar(*c)),
         Expr::CString(s) => Ok(Value::CString(s.clone())),
         Expr::Variable(name) => env
             .get(name)
@@ -96,6 +98,21 @@ pub fn eval(expr: &Expr, env: &Env) -> Result<Value, String> {
                         out.push_str(&b);
                         out
                     })),
+                    (Value::CString(a), Value::CChar(b)) => Ok(Value::CString({
+                        let mut out = a;
+                        out.push(b);
+                        out
+                    })),
+                    (Value::CChar(a), Value::CString(b)) => Ok(Value::CString({
+                        let mut out = a.to_string();
+                        out.push_str(&b);
+                        out
+                    })),
+                    (Value::CChar(a), Value::CChar(b)) => Ok(Value::CString({
+                        let mut out = a.to_string();
+                        out.push(b);
+                        out
+                    })),
                     _ => Err("Cannot add these types".to_string()),
                 },
                 BinaryOp::Sub => match (left_val, right_val) {
@@ -112,6 +129,9 @@ pub fn eval(expr: &Expr, env: &Env) -> Result<Value, String> {
                     (Value::Number(a), Value::Integer(b)) => Ok(Value::Number(a * b as f64)),
                     (Value::CString(a), Value::Integer(b)) => {
                         Ok(Value::CString(a.repeat(b as usize)))
+                    }
+                    (Value::CChar(a), Value::Integer(b)) => {
+                        Ok(Value::CString(a.to_string().repeat(b as usize)))
                     }
                     _ => Err("Cannot multiply these types".to_string()),
                 },
